@@ -1,0 +1,40 @@
+{
+  "calendarName": "苏超测试日历",
+  "timezone": "Asia/Shanghai",
+  "description": "江苏省城市足球联赛赛程安排（测试版）",
+  "events": [
+    {
+      "title": "比赛1",
+      "start": "2026-04-20T10:00:00",
+      "end": "2026-04-20T14:00:00",
+      "description": "比赛1对阵信息",
+      "location": "地点1",
+      "reminder": 30
+    },
+    {
+      "title": "比赛2",
+      "start": "2025-04-21T04:00:00",
+      "duration": "PT30M",
+      "rrule": "FREQ=WEEKLY;BYDAY=MO,THU;COUNT=20",
+      "description": "比赛2对阵信息",
+      "location": "地点2",
+      "reminder": 15
+    },
+    {
+      "title": "比赛3",
+      "start": "2026-04-22T10:00:00",
+      "end": "2026-04-22T14:00:00",
+      "description": "比赛3对阵信息",
+      "location": "地点3",
+      "reminder": 60
+    },
+    {
+      "title": "比赛4",
+      "start": "2026-04-22",
+      "allDay": true,
+      "description": "比赛4对阵信息",
+      "rrule": "FREQ=YEARLY",
+      "reminder": 0
+    }
+  ]
+}
