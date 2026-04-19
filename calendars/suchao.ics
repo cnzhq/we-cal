@@ -3,11 +3,11 @@ VERSION:2.0
 PRODID:-//We-Cal//Calendar Generator//EN
 CALSCALE:GREGORIAN
 METHOD:PUBLISH
-NAME:苏超常规赛程2赛程
-X-WR-CALNAME:苏超常规赛程2赛程
-CALNAME:苏超常规赛程2赛程
+NAME:江苏省城市足球联赛2026常规赛赛程-0.1-beta
+X-WR-CALNAME:江苏省城市足球联赛2026常规赛赛程-0.1-beta
+CALNAME:江苏省城市足球联赛2026常规赛赛程-0.1-beta
 X-WR-TIMEZONE:Asia/Shanghai
-X-WR-CALDESC:2026年苏超常规赛程2完整赛程，包含比赛时间、主客队、场地、转播信息
+X-WR-CALDESC:2026年江苏省城市足球联赛全赛程，包含比赛时间、主客队、场地、转播信息
 BEGIN:VEVENT
 UID:1776620445408-newwy906i@we-cal
 DTSTAMP:20260419T174045Z
