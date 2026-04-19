@@ -1,0 +1,12 @@
+{
+  "name": "we-cal-generator",
+  "version": "1.0.0",
+  "description": "JSON/YAML to ICS calendar generator",
+  "scripts": {
+    "build": "node scripts/build-ics.js",
+    "build:watch": "node scripts/build-ics.js --watch",
+    "clean": "rm -rf calendars/*.ics"
+  },
+  "devDependencies": {},
+  "dependencies": {}
+}

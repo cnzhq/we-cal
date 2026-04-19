@@ -1,0 +1,40 @@
+{
+  "calendarName": "游戏活动日历",
+  "timezone": "Asia/Shanghai",
+  "description": "追踪游戏版本更新、活动和赛事",
+  "events": [
+    {
+      "title": "原神 5.0 版本更新",
+      "start": "2024-08-28T10:00:00",
+      "end": "2024-08-28T14:00:00",
+      "description": "纳塔地区正式开放，火之国冒险开始",
+      "location": "提瓦特大陆",
+      "reminder": 30
+    },
+    {
+      "title": "深渊螺旋刷新",
+      "start": "2024-09-02T04:00:00",
+      "duration": "PT30M",
+      "rrule": "FREQ=WEEKLY;BYDAY=MO,THU;COUNT=20",
+      "description": "深渊怪物和buff刷新，挑战获取原石",
+      "location": "马斯克礁",
+      "reminder": 15
+    },
+    {
+      "title": "限时活动：炼武秘境",
+      "start": "2024-09-15T10:00:00",
+      "end": "2024-09-25T03:59:00",
+      "description": "活动期间武器材料双倍掉落",
+      "location": "蒙德/璃月/稻妻",
+      "reminder": 60
+    },
+    {
+      "title": "角色生日：胡桃",
+      "start": "2024-07-15",
+      "allDay": true,
+      "description": "胡桃的生日，记得查看邮件领取奖励",
+      "rrule": "FREQ=YEARLY",
+      "reminder": 0
+    }
+  ]
+}
