@@ -18,9 +18,9 @@ jobs:
       - name: Deploy to server
         uses: appleboy/scp-action@master
         with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: "we-cal/calendar.ics"
           target: "/var/www/html/calendar/"
           strip_components: 1
@@ -28,9 +28,9 @@ jobs:
       - name: Verify deployment
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             ls -la /var/www/html/calendar/calendar.ics
             echo "Calendar synced successfully at $(date)"
