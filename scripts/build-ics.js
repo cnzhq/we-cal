@@ -40,10 +40,16 @@ function escapeText(text) {
     .replace(/\n/g, '\\n');
 }
 
-// 生成单个事件的 VEVENT 块
+// 将本地时间转换为 UTC 时间
+function toUTC(dateStr) {
+  const date = new Date(dateStr);
+  return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z/, 'Z');
+}
+
+// 生成单个事件的 VEVENT 块（兼容版本：UTC时间，无VALARM）
 function generateEvent(event, index) {
   const uid = event.uid || generateUID();
-  const now = formatDateTime(new Date().toISOString()) + 'Z';
+  const now = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z/, 'Z');
   
   let vevent = [
     'BEGIN:VEVENT',
@@ -51,12 +57,13 @@ function generateEvent(event, index) {
     `DTSTAMP:${now}`,
   ];
 
-  // 开始时间
+  // 开始时间（使用 UTC 或日期格式）
   if (event.start) {
     if (event.allDay) {
       vevent.push(`DTSTART;VALUE=DATE:${event.start.replace(/-/g, '')}`);
     } else {
-      vevent.push(`DTSTART;TZID=${event.timezone || 'Asia/Shanghai'}:${formatDateTime(event.start)}`);
+      // 使用 UTC 时间（更兼容）
+      vevent.push(`DTSTART:${toUTC(event.start)}`);
     }
   }
 
@@ -65,11 +72,8 @@ function generateEvent(event, index) {
     if (event.allDay) {
       vevent.push(`DTEND;VALUE=DATE:${event.end.replace(/-/g, '')}`);
     } else {
-      vevent.push(`DTEND;TZID=${event.timezone || 'Asia/Shanghai'}:${formatDateTime(event.end)}`);
+      vevent.push(`DTEND:${toUTC(event.end)}`);
     }
-  } else if (event.duration) {
-    // 如果有持续时间但没有结束时间
-    vevent.push(`DURATION:${event.duration}`);
   }
 
   // 重复规则
@@ -96,15 +100,7 @@ function generateEvent(event, index) {
   vevent.push('STATUS:CONFIRMED');
   vevent.push(`SEQUENCE:${event.sequence || 0}`);
 
-  // 提醒
-  if (event.reminder) {
-    const trigger = event.reminder > 0 ? `-PT${event.reminder}M` : `PT${Math.abs(event.reminder)}M`;
-    vevent.push('BEGIN:VALARM');
-    vevent.push('ACTION:DISPLAY');
-    vevent.push(`DESCRIPTION:${escapeText(event.title || '提醒')}`);
-    vevent.push(`TRIGGER:${trigger}`);
-    vevent.push('END:VALARM');
-  }
+  // 注意：移除了 VALARM，因为许多手机日历不支持
 
   vevent.push('END:VEVENT');
   
