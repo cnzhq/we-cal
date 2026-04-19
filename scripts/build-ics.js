@@ -39,21 +39,44 @@ function toUTCString(date) {
   return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z/, 'Z');
 }
 
+// 全局限制
+const MAX_EVENTS_PER_RRULE = 50; // 单个 RRULE 最大展开事件数
+
 // 解析 RRULE 并生成所有日期
-function expandRRule(rruleStr, startDate, count) {
+function expandRRule(rruleStr, startDate, originalCount) {
   try {
+    // 检查是否为 YEARLY 且没有 COUNT
+    const isYearly = rruleStr.includes('FREQ=YEARLY');
+    const hasCount = rruleStr.includes('COUNT=');
+    
+    let effectiveRRule = rruleStr;
+    let count = originalCount;
+    
+    // YEARLY 无 COUNT 时，自动限制为 10 年
+    if (isYearly && !hasCount) {
+      effectiveRRule = rruleStr + ';COUNT=10';
+      count = 10;
+      console.log(`  ⚠️  YEARLY without COUNT, auto-limited to 10 years`);
+    }
+    
+    // 如果 COUNT 超过最大值，进行限制
+    if (count && count > MAX_EVENTS_PER_RRULE) {
+      console.log(`  ⚠️  COUNT(${count}) exceeds max(${MAX_EVENTS_PER_RRULE}), limiting...`);
+      // 修改 RRULE 中的 COUNT
+      effectiveRRule = effectiveRRule.replace(/COUNT=\d+/, `COUNT=${MAX_EVENTS_PER_RRULE}`);
+      count = MAX_EVENTS_PER_RRULE;
+    }
+    
     // 构建完整的 RRULE 字符串
-    const fullRRule = `DTSTART:${startDate.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z/, 'Z')}\nRRULE:${rruleStr}`;
+    const fullRRule = `DTSTART:${startDate.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z/, 'Z')}\nRRULE:${effectiveRRule}`;
     const rule = rrulestr(fullRRule);
     
     // 获取所有日期
     const dates = rule.all();
     
-    // 如果指定了 count，限制数量
-    if (count && count > 0) {
-      return dates.slice(0, count);
-    }
-    return dates;
+    // 限制返回数量
+    const limit = Math.min(count || dates.length, MAX_EVENTS_PER_RRULE);
+    return dates.slice(0, limit);
   } catch (error) {
     console.warn(`  ⚠️  Failed to parse RRULE: ${rruleStr}`, error.message);
     return [startDate]; // 返回原始日期
