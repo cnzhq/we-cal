@@ -107,7 +107,7 @@ function generateEvent(event, index) {
   return vevent.join('\r\n');
 }
 
-// 生成完整的 ICS 文件
+// 生成完整的 ICS 文件（简化兼容版本）
 function generateICS(calendarData) {
   const lines = [
     'BEGIN:VCALENDAR',
@@ -118,14 +118,6 @@ function generateICS(calendarData) {
     `X-WR-CALNAME:${escapeText(calendarData.calendarName || '我的日历')}`,
     `X-WR-TIMEZONE:${calendarData.timezone || 'Asia/Shanghai'}`,
     `X-WR-CALDESC:${escapeText(calendarData.description || '由 We-Cal 生成的日历')}`,
-    'BEGIN:VTIMEZONE',
-    `TZID:${calendarData.timezone || 'Asia/Shanghai'}`,
-    'BEGIN:STANDARD',
-    'DTSTART:19700101T000000',
-    'TZOFFSETFROM:+0800',
-    'TZOFFSETTO:+0800',
-    'END:STANDARD',
-    'END:VTIMEZONE',
   ];
 
   // 添加所有事件
