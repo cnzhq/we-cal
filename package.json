@@ -10,6 +10,7 @@
     "clean": "rm -rf calendars/*.ics"
   },
   "dependencies": {
+    "csv-parse": "^6.2.1",
     "rrule": "^2.8.1"
   }
 }
