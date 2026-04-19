@@ -2,10 +2,12 @@
 /**
  * JSON to ICS Calendar Generator
  * 将 events/ 目录下的 JSON 文件转换为 calendars/ 目录下的 ICS 文件
+ * 支持展开 RRULE 为独立事件（提高兼容性）
  */
 
 const fs = require('fs');
 const path = require('path');
+const { RRule, rrulestr } = require('rrule');
 
 const EVENTS_DIR = path.join(__dirname, '..', 'events');
 const CALENDARS_DIR = path.join(__dirname, '..', 'calendars');
@@ -23,14 +25,6 @@ function generateUID() {
   return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}@we-cal`;
 }
 
-// 格式化日期时间为 ICS 格式
-function formatDateTime(dateStr, timezone = 'Asia/Shanghai') {
-  const date = new Date(dateStr);
-  // 转换为 YYYYMMDDTHHMMSS 格式
-  const pad = (n) => n.toString().padStart(2, '0');
-  return `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}T${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`;
-}
-
 // 转义 ICS 文本
 function escapeText(text) {
   return text
@@ -40,16 +34,36 @@ function escapeText(text) {
     .replace(/\n/g, '\\n');
 }
 
-// 将本地时间转换为 UTC 时间
-function toUTC(dateStr) {
-  const date = new Date(dateStr);
+// 将本地时间转换为 UTC 时间字符串
+function toUTCString(date) {
   return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z/, 'Z');
 }
 
-// 生成单个事件的 VEVENT 块（兼容版本：UTC时间，无VALARM）
-function generateEvent(event, index) {
-  const uid = event.uid || generateUID();
-  const now = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z/, 'Z');
+// 解析 RRULE 并生成所有日期
+function expandRRule(rruleStr, startDate, count) {
+  try {
+    // 构建完整的 RRULE 字符串
+    const fullRRule = `DTSTART:${startDate.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z/, 'Z')}\nRRULE:${rruleStr}`;
+    const rule = rrulestr(fullRRule);
+    
+    // 获取所有日期
+    const dates = rule.all();
+    
+    // 如果指定了 count，限制数量
+    if (count && count > 0) {
+      return dates.slice(0, count);
+    }
+    return dates;
+  } catch (error) {
+    console.warn(`  ⚠️  Failed to parse RRULE: ${rruleStr}`, error.message);
+    return [startDate]; // 返回原始日期
+  }
+}
+
+// 生成单个事件的 VEVENT 块
+function generateSingleEvent(event, startTime, endTime, sequence = 0) {
+  const uid = generateUID();
+  const now = toUTCString(new Date());
   
   let vevent = [
     'BEGIN:VEVENT',
@@ -57,28 +71,22 @@ function generateEvent(event, index) {
     `DTSTAMP:${now}`,
   ];
 
-  // 开始时间（使用 UTC 或日期格式）
-  if (event.start) {
-    if (event.allDay) {
-      vevent.push(`DTSTART;VALUE=DATE:${event.start.replace(/-/g, '')}`);
-    } else {
-      // 使用 UTC 时间（更兼容）
-      vevent.push(`DTSTART:${toUTC(event.start)}`);
-    }
+  // 开始时间
+  if (event.allDay) {
+    const dateStr = startTime.toISOString().split('T')[0].replace(/-/g, '');
+    vevent.push(`DTSTART;VALUE=DATE:${dateStr}`);
+  } else {
+    vevent.push(`DTSTART:${toUTCString(startTime)}`);
   }
 
   // 结束时间
-  if (event.end) {
+  if (endTime) {
     if (event.allDay) {
-      vevent.push(`DTEND;VALUE=DATE:${event.end.replace(/-/g, '')}`);
+      const dateStr = endTime.toISOString().split('T')[0].replace(/-/g, '');
+      vevent.push(`DTEND;VALUE=DATE:${dateStr}`);
     } else {
-      vevent.push(`DTEND:${toUTC(event.end)}`);
+      vevent.push(`DTEND:${toUTCString(endTime)}`);
     }
-  }
-
-  // 重复规则
-  if (event.rrule) {
-    vevent.push(`RRULE:${event.rrule}`);
   }
 
   // 标题
@@ -98,16 +106,69 @@ function generateEvent(event, index) {
 
   // 状态
   vevent.push('STATUS:CONFIRMED');
-  vevent.push(`SEQUENCE:${event.sequence || 0}`);
-
-  // 注意：移除了 VALARM，因为许多手机日历不支持
+  vevent.push(`SEQUENCE:${sequence}`);
 
   vevent.push('END:VEVENT');
   
   return vevent.join('\r\n');
 }
 
-// 生成完整的 ICS 文件（简化兼容版本）
+// 生成事件（支持展开 RRULE）
+function generateEvent(event, index) {
+  const events = [];
+  
+  // 解析开始时间
+  const startTime = new Date(event.start);
+  
+  // 计算结束时间或持续时间
+  let endTime = null;
+  if (event.end) {
+    endTime = new Date(event.end);
+  } else if (event.duration) {
+    // 解析 ISO 8601 持续时间，如 PT2H
+    const match = event.duration.match(/PT(\d+)H/);
+    if (match) {
+      const hours = parseInt(match[1]);
+      endTime = new Date(startTime.getTime() + hours * 60 * 60 * 1000);
+    } else {
+      // 默认 1 小时
+      endTime = new Date(startTime.getTime() + 60 * 60 * 1000);
+    }
+  } else {
+    // 默认 1 小时
+    endTime = new Date(startTime.getTime() + 60 * 60 * 1000);
+  }
+  
+  // 计算持续时间（毫秒）
+  const duration = endTime.getTime() - startTime.getTime();
+  
+  // 如果有 RRULE，展开为多个事件
+  if (event.rrule) {
+    // 解析 COUNT
+    const countMatch = event.rrule.match(/COUNT=(\d+)/);
+    const count = countMatch ? parseInt(countMatch[1]) : null;
+    
+    // 展开日期
+    const dates = expandRRule(event.rrule, startTime, count);
+    
+    console.log(`  📅 Expanding "${event.title}": ${dates.length} instances`);
+    
+    // 为每个日期生成独立事件
+    dates.forEach((date, i) => {
+      const instanceStart = new Date(date);
+      const instanceEnd = new Date(instanceStart.getTime() + duration);
+      
+      events.push(generateSingleEvent(event, instanceStart, instanceEnd, i));
+    });
+  } else {
+    // 普通事件
+    events.push(generateSingleEvent(event, startTime, endTime, 0));
+  }
+  
+  return events;
+}
+
+// 生成完整的 ICS 文件
 function generateICS(calendarData) {
   const lines = [
     'BEGIN:VCALENDAR',
@@ -120,10 +181,13 @@ function generateICS(calendarData) {
     `X-WR-CALDESC:${escapeText(calendarData.description || '由 We-Cal 生成的日历')}`,
   ];
 
-  // 添加所有事件
+  // 添加所有事件（展开后的）
   if (calendarData.events && Array.isArray(calendarData.events)) {
     calendarData.events.forEach((event, index) => {
-      lines.push(generateEvent(event, index));
+      const expandedEvents = generateEvent(event, index);
+      expandedEvents.forEach(vevent => {
+        lines.push(vevent);
+      });
     });
   }
 
@@ -145,7 +209,21 @@ function processJSONFile(filename) {
     const outputPath = path.join(CALENDARS_DIR, `${basename}.ics`);
     
     fs.writeFileSync(outputPath, icsContent, 'utf8');
-    console.log(`✅ Generated: ${basename}.ics (${data.events?.length || 0} events)`);
+    
+    // 计算总事件数（展开后）
+    let totalEvents = 0;
+    if (data.events) {
+      data.events.forEach(event => {
+        if (event.rrule) {
+          const countMatch = event.rrule.match(/COUNT=(\d+)/);
+          totalEvents += countMatch ? parseInt(countMatch[1]) : 1;
+        } else {
+          totalEvents += 1;
+        }
+      });
+    }
+    
+    console.log(`✅ Generated: ${basename}.ics (${totalEvents} total events)`);
     
     return true;
   } catch (error) {

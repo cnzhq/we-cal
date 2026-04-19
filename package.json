@@ -7,6 +7,7 @@
     "build:watch": "node scripts/build-ics.js --watch",
     "clean": "rm -rf calendars/*.ics"
   },
-  "devDependencies": {},
-  "dependencies": {}
+  "dependencies": {
+    "rrule": "^2.8.1"
+  }
 }
