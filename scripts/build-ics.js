@@ -122,7 +122,6 @@ function generateICS(calendarData) {
     `X-WR-CALNAME:${escapeText(calendarData.calendarName || '我的日历')}`,
     `X-WR-TIMEZONE:${calendarData.timezone || 'Asia/Shanghai'}`,
     `X-WR-CALDESC:${escapeText(calendarData.description || '由 We-Cal 生成的日历')}`,
-    '',
     'BEGIN:VTIMEZONE',
     `TZID:${calendarData.timezone || 'Asia/Shanghai'}`,
     'BEGIN:STANDARD',
@@ -136,12 +135,10 @@ function generateICS(calendarData) {
   // 添加所有事件
   if (calendarData.events && Array.isArray(calendarData.events)) {
     calendarData.events.forEach((event, index) => {
-      lines.push('');
       lines.push(generateEvent(event, index));
     });
   }
 
-  lines.push('');
   lines.push('END:VCALENDAR');
 
   return lines.join('\r\n');
