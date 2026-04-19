@@ -131,6 +131,16 @@ function generateSingleEvent(event, startTime, endTime, sequence = 0) {
   vevent.push('STATUS:CONFIRMED');
   vevent.push(`SEQUENCE:${sequence}`);
 
+  // 提醒功能（VALARM）
+  if (event.reminder && event.reminder > 0) {
+    const trigger = `-PT${event.reminder}M`;
+    vevent.push('BEGIN:VALARM');
+    vevent.push('ACTION:DISPLAY');
+    vevent.push(`DESCRIPTION:${escapeText(event.title || '提醒')}`);
+    vevent.push(`TRIGGER:${trigger}`);
+    vevent.push('END:VALARM');
+  }
+
   vevent.push('END:VEVENT');
   
   return vevent.join('\r\n');
