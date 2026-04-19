@@ -1,8 +1,10 @@
 {
   "name": "we-cal-generator",
   "version": "1.0.0",
-  "description": "JSON/YAML to ICS calendar generator",
+  "description": "CSV/JSON to ICS calendar generator",
   "scripts": {
+    "convert": "node scripts/csv-to-json.js",
+    "convert:watch": "node scripts/csv-to-json.js --watch",
     "build": "node scripts/build-ics.js",
     "build:watch": "node scripts/build-ics.js --watch",
     "clean": "rm -rf calendars/*.ics"
