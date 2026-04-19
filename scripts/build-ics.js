@@ -193,15 +193,22 @@ function generateEvent(event, index) {
 
 // 生成完整的 ICS 文件
 function generateICS(calendarData) {
+  const calName = escapeText(calendarData.calendarName || '我的日历');
+  const calDesc = escapeText(calendarData.description || '由 We-Cal 生成的日历');
+  const timezone = calendarData.timezone || 'Asia/Shanghai';
+  
   const lines = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
     'PRODID:-//We-Cal//Calendar Generator//EN',
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
-    `X-WR-CALNAME:${escapeText(calendarData.calendarName || '我的日历')}`,
-    `X-WR-TIMEZONE:${calendarData.timezone || 'Asia/Shanghai'}`,
-    `X-WR-CALDESC:${escapeText(calendarData.description || '由 We-Cal 生成的日历')}`,
+    // 多种日历名称字段（提高兼容性）
+    `NAME:${calName}`,
+    `X-WR-CALNAME:${calName}`,
+    `CALNAME:${calName}`,
+    `X-WR-TIMEZONE:${timezone}`,
+    `X-WR-CALDESC:${calDesc}`,
   ];
 
   // 添加所有事件（展开后的）
